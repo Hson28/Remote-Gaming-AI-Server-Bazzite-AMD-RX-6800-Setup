@@ -1,59 +1,69 @@
-# Remote Gaming & AI Server: Bazzite (AMD RX 6800) Setup
+# 🎮 Projekt: Remote Gaming & AI Server
 
-Denna guide beskriver konfigurationen av en högpresterande speldator körandes **Bazzite** (en immutable Linux-distro) för stabil fjärrstyrning och gaming över 5G-nätet. Dokumentet fungerar som en tutorial för att sätta upp **Sunshine**, **Tailscale**, **Wake-on-LAN** och lösa "headless"-problematik.
+Denna README fungerar både som en teknisk tutorial och en dokumentation över projektets gång, inklusive hur vi löste de hinder vi stötte på längs vägen.
 
-## 🛠 Hårdvara & Miljö
-* **OS:** Bazzite (KDE Plasma / Wayland)
-* **GPU:** AMD Radeon RX 6800
-* **Router:** ASUS TUF-BE6500
-* **Fjärranslutning:** Tailscale (VPN) & Moonlight (Klient)
-* **Headless-fix:** DisplayPort Dummy Plug (DJY DOONJIEY)
+## 🛠 Projektöversikt
 
----
+Målet med projektet var att förvandla en dator med **Bazzite** (en immutable Linux-distro) och ett **AMD RX 6800** till en kraftfull streamingserver. Genom att använda **Sunshine** och **Moonlight** skapades en lösning för att spela tunga titlar över 5G-nätet med minimal latens.
 
-## 1. BIOS & Fjärrstart (Wake-on-LAN)
-För att väcka datorn på distans krävs konfiguration i moderkortets BIOS:
 
-* **ErP Ready:** Ställ in på **Disabled**. Detta håller nätverkskortet strömsatt vid avstängning.
-* **Power On By PCI-E:** Ställ in på **Enabled** för att tillåta väckning via "Magic Packets".
-* **Restore AC Power Loss:** Ställ in på **Power On** (valfritt, men användbart om du använder ett smart eluttag för hård omstart).
 
----
+## ⚙️ Hårdvaru- och nätverksstack
 
-## 2. Sunshine & Rättigheter (Immutable OS)
-Bazzite är ett skrivskyddat (immutable) system, vilket innebär att vissa standardmetoder för Linux-behörigheter inte fungerar.
-
-### Användargrupper
-Istället för att ändra systemfiler, lägg till din användare i följande grupper för att ge Sunshine åtkomst till GPU-hårdvaran:
-```bash
-sudo usermod -aG video $USER
-sudo usermod -aG render $USER# Remote Gaming & AI Server: Bazzite (AMD RX 6800) Setup
-
-Denna guide beskriver hur man konfigurerar en kraftfull speldator körandes **Bazzite** (en immutable Linux-distro) för stabil fjärrstyrning och gaming över 5G-nätet. Den täcker konfiguration av **Sunshine**, **Tailscale**, **Wake-on-LAN** samt hur man löser "headless"-problem med en hårdvaru-dummy.
-
-## 🛠 Hårdvara & Miljö
-* **Operativsystem:** Bazzite (KDE Plasma / Wayland)
-* **GPU:** AMD Radeon RX 6800
-* **Router:** ASUS TUF-BE6500
-* **Nätverk:** Tailscale (för säker 5G-tunnel)
-* **Headless-lösning:** DisplayPort Dummy Plug
+| Komponent | Vald lösning |
+| :--- | :--- |
+| **Operativsystem** | Bazzite (KDE Plasma / Wayland) |
+| **GPU** | AMD Radeon RX 6800 |
+| **Router** | ASUS TUF-BE6500 (WoL-stöd) |
+| **VPN** | Tailscale (Säker tunnel över 5G) |
+| **Headless-fix** | DisplayPort Dummy Plug |
 
 ---
 
-## 1. BIOS & Fjärrstart (Wake-on-LAN)
-För att kunna starta datorn på distans krävs specifika inställningar i BIOS:
+## 🏗 Resans gång: Från hinder till lösning
 
-* **ErP Ready:** Ställ in på **Disabled**. Detta säkerställer att nätverkskortet har ström även när datorn är avstängd.
-* **Power On By PCI-E:** Ställ in på **Enabled** för att tillåta routern att väcka datorn via ett "Magic Packet".
-* **Restore AC Power Loss:** Ställ in på **Power On**. Om du använder ett smart uttag kan du tvinga datorn att starta genom att helt enkelt slå på strömmen.
+### 1. BIOS & Strömhantering (Wake-on-LAN)
+Första steget var att säkerställa att datorn kunde väckas på distans. Vi konfigurerade BIOS för att tillåta "Magic Packets" och säkerställde att nätverkskortet inte tappade strömmen vid avstängning.
+* **ErP Ready:** Sattes till *Disabled*.
+* **Power On By PCI-E:** Sattes till *Enabled*.
+
+### 2. Hantering av Immutable OS (Rättighetsproblemet)
+Eftersom Bazzite använder ett skrivskyddat filsystem misslyckades traditionella försök att ge Sunshine rättigheter via `setcap` (felet: *"Read-only file system"*).
+
+> **Lösning:** Vi kringgick detta genom att lägga till användaren i grupperna `video` och `render`. Detta gav Sunshine behörighet att läsa bildbufferten och använda grafikkortets hårdvarukodare utan att röra systemfilerna.
+
+### 3. Kampen mot "Error 0" & Headless-problemet
+Ett stort bakslag var när streamen dog så fort den fysiska TV:n stängdes av (Moonlight felkod: **Error 0**). Utan en aktiv skärm signal "somnar" grafikkortets encoder.
+
+* **Försök 1 (Misslyckat):** Skapa virtuella skärmar via mjukvara. Detta misslyckades då DBus-gränssnittet i Bazzite returnerade `UnknownInterface`.
+* **Försök 2 (Framgång):** Installation av en fysisk **DisplayPort Dummy Plug**. Genom att ställa in TV:n som *Primary* i KDE men låta pluggen vara aktiv, kan Sunshine filma pluggen även när TV:n är svart.
 
 ---
 
-## 2. Sunshine: Behörigheter & Grupper
-Eftersom Bazzite är ett **immutable** (skrivskyddat) system kan man inte använda standardkommandon som `setcap` direkt på systemfiler. Lösningen är att hantera rättigheter via användargrupper.
+## 🚀 Slutgiltig Tutorial: Steg-för-steg
 
-### Lägg till användare i grupper
-Kör följande kommandon för att ge Sunshine åtkomst till hårdvarukodning (GPU) och skärmdumpning utan root-behörighet:
-```bash
-sudo usermod -aG video $USER
-sudo usermod -aG render $USER
+### Steg 1: Ge behörigheter
+Öppna terminalen och kör följande kommando för att ge de rättigheter som krävs:
+
+(sudo usermod -aG video,render $USER)
+
+*Starta därefter om datorn för att grupperna ska laddas in korrekt.*
+
+### Steg 2: Konfigurera Sunshine
+1. Logga in på webbgränssnittet via `https://localhost:47990`.
+2. Navigera till **Configuration** -> **Audio/Video**.
+3. Leta upp ID för din dummy-plugg under fliken *Troubleshooting* (ofta `id: 2`).
+4. Skriv in detta ID i rutan **Display Id**.
+
+### Steg 3: Säkra skärmprioriteringen
+När dummy-pluggen ansluts kan TV:n råka bli svart.
+1. Anslut till datorn via mobilen.
+2. Gå till **Systeminställningar** -> **Display Configuration**.
+3. Markera din Samsung-TV som **Primary**.
+4. Klicka på **Apply** för att spara layouten.
+
+### Steg 4: Fjärrstart via 5G
+För att spela utanför hemmet:
+1. Använd **Tailscale** på din klient för att etablera en säker anslutning till datorn.
+2. Skicka en WoL-signal via din ASUS-app för att väcka datorn från strömsparläge.
+3. Anslut via **Moonlight** och njut av streamingen!
