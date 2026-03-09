@@ -1,5 +1,34 @@
 # Remote Gaming & AI Server: Bazzite (AMD RX 6800) Setup
 
+Denna guide beskriver konfigurationen av en högpresterande speldator körandes **Bazzite** (en immutable Linux-distro) för stabil fjärrstyrning och gaming över 5G-nätet. Dokumentet fungerar som en tutorial för att sätta upp **Sunshine**, **Tailscale**, **Wake-on-LAN** och lösa "headless"-problematik.
+
+## 🛠 Hårdvara & Miljö
+* **OS:** Bazzite (KDE Plasma / Wayland)
+* **GPU:** AMD Radeon RX 6800
+* **Router:** ASUS TUF-BE6500
+* **Fjärranslutning:** Tailscale (VPN) & Moonlight (Klient)
+* **Headless-fix:** DisplayPort Dummy Plug (DJY DOONJIEY)
+
+---
+
+## 1. BIOS & Fjärrstart (Wake-on-LAN)
+För att väcka datorn på distans krävs konfiguration i moderkortets BIOS:
+
+* **ErP Ready:** Ställ in på **Disabled**. Detta håller nätverkskortet strömsatt vid avstängning.
+* **Power On By PCI-E:** Ställ in på **Enabled** för att tillåta väckning via "Magic Packets".
+* **Restore AC Power Loss:** Ställ in på **Power On** (valfritt, men användbart om du använder ett smart eluttag för hård omstart).
+
+---
+
+## 2. Sunshine & Rättigheter (Immutable OS)
+Bazzite är ett skrivskyddat (immutable) system, vilket innebär att vissa standardmetoder för Linux-behörigheter inte fungerar.
+
+### Användargrupper
+Istället för att ändra systemfiler, lägg till din användare i följande grupper för att ge Sunshine åtkomst till GPU-hårdvaran:
+```bash
+sudo usermod -aG video $USER
+sudo usermod -aG render $USER# Remote Gaming & AI Server: Bazzite (AMD RX 6800) Setup
+
 Denna guide beskriver hur man konfigurerar en kraftfull speldator körandes **Bazzite** (en immutable Linux-distro) för stabil fjärrstyrning och gaming över 5G-nätet. Den täcker konfiguration av **Sunshine**, **Tailscale**, **Wake-on-LAN** samt hur man löser "headless"-problem med en hårdvaru-dummy.
 
 ## 🛠 Hårdvara & Miljö
